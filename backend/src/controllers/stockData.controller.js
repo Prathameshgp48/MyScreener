@@ -1,5 +1,6 @@
 import { URLSearchParams } from "url";
 import axios from "axios"
+import zlib from "zlib"
 
 //suppose to be added in frontend
 const upstoxLogin = async (req, res) => {
@@ -90,9 +91,27 @@ const getMarketQuote = async(req, res) => {
     }
 }
 
+const getStockList = async (req, res) => {
+    try {
+        const response = await axios.get(`https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz`,
+            { responseType: 'arraybuffer' }
+        )
+
+        const decompressed = zlib.gunzipSync(Buffer.from(response.data));
+
+        const jsonData = JSON.parse(decompressed.toString('utf8'));
+
+        res.json(jsonData.splice(1, 10))
+    } catch (error) {
+        console.error(error);
+        res.json("Failed to fetch market quote:", error);
+    }
+}
+
 export {
     upstoxLogin,
     generateAccessToken,
     loadOHLCData,
-    getMarketQuote
+    getMarketQuote,
+    getStockList
 }
