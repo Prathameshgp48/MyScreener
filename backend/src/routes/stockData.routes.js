@@ -5,7 +5,7 @@ const router = Router()
 
 router.route("/login").get(upstoxLogin)
 router.route("/login/generate-token").get(generateAccessToken)
-router.route("/candle-data").get(loadOHLCData)
+router.route("/candle-data/:instrument_key/:unit/:interval/:toDate/:fromDate").get(loadOHLCData)
 router.route("/market-quote").get(getMarketQuote)
 
 export default router

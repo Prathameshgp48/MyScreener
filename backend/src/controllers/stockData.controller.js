@@ -42,27 +42,20 @@ const generateAccessToken = async (req, res) => {
 }
 
 const loadOHLCData = async(req, res) => {
-    const instrument_key = "NSE_EQ|INE002A01018"; // RELIANCE
-    const unit = "day";
-    const interval = "1";
-    const to_date = "2024-06-01";
-    const from_date = "2024-06-10";
+    const {instrument_key, interval, unit, toDate, fromDate} = req.params
 
     // // For 1 Month Chart
     // GET / v3 / historical - candle / NSE_EQ | INE848E01016 / minutes / 15 / 2025-07-03 / 2025-06-03
-
     // // For 6 Month Chart
     // GET / v3 / historical - candle / NSE_EQ | INE848E01016 / days / 1 / 2025-07-03 / 2025-01-03
-
     // // For 1 Year Chart
     // GET / v3 / historical - candle / NSE_EQ | INE848E01016 / days / 1 / 2024-07-03 / 2025-07-03
-
     // // For 3 Year Chart
     // GET / v3 / historical - candle / NSE_EQ | INE848E01016 / weeks / 1 / 2025-07-03 / 2022-07-03
 
     
     try {
-        const response = await axios.get('https://api.upstox.com/v3/historical-candle/NSE_EQ%7CINE848E01016/days/1/2025-07-03/2025-01-03',
+        const response = await axios.get(`https://api.upstox.com/v3/historical-candle/${instrument_key}/${unit}/${interval}/${toDate}/${fromDate}`,
             {
                 headers: {
                     Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
