@@ -42,8 +42,8 @@ const generateAccessToken = async (req, res) => {
     }
 }
 
-const loadOHLCData = async(req, res) => {
-    const {instrument_key, interval, unit, toDate, fromDate} = req.params
+const loadOHLCData = async (req, res) => {
+    const { instrument_key, interval, unit, toDate, fromDate } = req.params
 
     // // For 1 Month Chart
     // GET / v3 / historical - candle / NSE_EQ | INE848E01016 / minutes / 15 / 2025-07-03 / 2025-06-03
@@ -54,7 +54,7 @@ const loadOHLCData = async(req, res) => {
     // // For 3 Year Chart
     // GET / v3 / historical - candle / NSE_EQ | INE848E01016 / weeks / 1 / 2025-07-03 / 2022-07-03
 
-    
+
     try {
         const response = await axios.get(`https://api.upstox.com/v3/historical-candle/${instrument_key}/${unit}/${interval}/${toDate}/${fromDate}`,
             {
@@ -63,7 +63,7 @@ const loadOHLCData = async(req, res) => {
                     Accept: "application/json",
                 },
             })
-        
+
         res.json(response.data)
     } catch (error) {
         console.error(error);
@@ -71,12 +71,13 @@ const loadOHLCData = async(req, res) => {
     }
 }
 
-const getMarketQuote = async(req, res) => {
+const getMarketQuote = async (req, res) => {
     const instrumentKey = 'NSE_EQ|INE848E01016'
 
     try {
-        const response = await axios.get(`https://api.upstox.com/v2/market-quote/quotes`, {
+        const response = await axios.get(`https://api.upstox.com/v2/market-quote/quotes?instrument_key=${instrumentKey}`, {
             headers: {
+                Accept: 'application/json',
                 Authorization: `Bearer ${process.env.ACCESS_TOKEN}`
             },
             params: {
@@ -84,7 +85,24 @@ const getMarketQuote = async(req, res) => {
             }
         })
 
-        res.json(response.data)
+        console.log(response.data)
+
+        const quoteValues = Object.values(response.data?.data || {});
+        const quote = quoteValues[0];
+
+        if (!quote) {
+            return res.status(404).json({ error: 'Quote data not found' });
+        }
+
+        const marketQuote = {
+            symbol: quote.symbol,
+            last_price: quote.last_price,
+            volume: quote.volume,
+            average_price: quote.average_price,
+            timestamp: quote.timestamp,
+        };
+
+        res.json(marketQuote)
     } catch (error) {
         console.error(error);
         res.json("Failed to fetch market quote:", error);
@@ -93,7 +111,7 @@ const getMarketQuote = async(req, res) => {
 
 const getStockList = async (req, res) => {
     try {
-        const response = await axios.get(`https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz`,
+        const response = await axios.get(`https://assets.upstox.com/market-quote/instruments/exchange/complete.json.gz`,
             { responseType: 'arraybuffer' }
         )
 
