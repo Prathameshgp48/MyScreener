@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import axios from "axios";
 import CandleChart from "./CandleChart";
+import {io} from "socket.io-client"
+
 
 function App() {
   const [interval, setInterval] = useState(15);
@@ -98,6 +100,15 @@ function App() {
 
   useEffect(() => {
     setGranularity(filter);
+    const socket = io("http://localhost:5000");
+
+    socket.on("liveData", (feed) => {
+      const instrumentKey = Object.keys(feed.feeds)[0];
+      const ltpData = feed.feeds[instrumentKey]?.fullFeed?.indexFF?.marketOHLC;
+      console.log(ltpData)
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   return (
