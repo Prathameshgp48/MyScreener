@@ -66,7 +66,7 @@ const connectWebSocket = async (wsUrl, io) => {
             ws.send(Buffer.from(JSON.stringify(data)))
         }, 1000)
     })
-
+     
     ws.on("message", (data) => {
         try {
             const decoded = decodeProtobuf(data)
