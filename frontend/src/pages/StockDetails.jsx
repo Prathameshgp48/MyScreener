@@ -24,6 +24,7 @@ function StockDetails() {
   const setGranularity = async (range) => {
     const now = new Date();
     const to = now.toISOString().split("T")[0];
+    let day = now.getDay();
     let computedUnit = "minutes";
     let computedInterval = 15;
 
@@ -32,7 +33,7 @@ function StockDetails() {
       case "1D":
         computedUnit = "minutes";
         computedInterval = 1;
-        // from.setDate(now.getDate() - 1);
+        from.setDate(now.getDate() - 1);
         break;
       case "5D":
         computedUnit = "minutes";
@@ -80,7 +81,7 @@ function StockDetails() {
     try {
       const instrument_key = "NSE_EQ|INE002A01018";
       let response;
-      if (range === "1D") {
+      if (range === "1D" && (day === 0 || day === 6)) {
         response = await axios.get(
           `http://localhost:5000/api/v1/intraday/${instrument_key}/${computedUnit}/${computedInterval}`
         );
@@ -112,7 +113,7 @@ function StockDetails() {
     });
 
     return () => socket.disconnect();
-  }, []);
+  }, [filter]);
 
   return (
     <div>
