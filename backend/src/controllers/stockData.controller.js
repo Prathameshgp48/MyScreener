@@ -204,7 +204,19 @@ const getStockList = async (req, res) => {
 
         const jsonData = JSON.parse(decompressed.toString('utf8'));
 
-        res.json(jsonData.splice(1, 10))
+        const filtered = jsonData.filter(item =>
+            (item.segment === "NSE_EQ" || item.segment === "BSE_EQ") &&
+            !/(\d{4}|\d+\.\d+%|PVT|SDL)/i.test(item.name || item.trading_symbol)
+        )
+
+        const instrumentList = filtered.map((data) => {
+            return {
+                label: data.name || data.trading_symbol,
+                instrument_key: data.instrument_key
+            }
+        }).filter(entry => !!entry.label)
+
+        res.json(instrumentList.splice(100, 10))
     } catch (error) {
         console.error(error);
         res.json("Failed to fetch market quote:", error);
