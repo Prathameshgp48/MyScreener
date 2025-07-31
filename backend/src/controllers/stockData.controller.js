@@ -71,12 +71,12 @@ const generateAccessToken = async (req, res) => {
         const jwtExpirySeconds = Math.floor((expiresAt - issuedAt) / 1000)
 
         const jwtToken = jwt.sign(
-            {userId: user_id},
+            { userId: user_id },
             process.env.JWT_SECRET,
-            {expiresIn: jwtExpirySeconds}
+            { expiresIn: jwtExpirySeconds }
         )
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Loggin Succesful",
             jwtToken,
         })
@@ -92,12 +92,12 @@ const loadOHLCData = async (req, res) => {
     // const decodedKey = decodeURIComponent(instrument_key)
     // console.log(decodedKey)
     // // const encodedInstrumentKey = encodeURIComponent(instrument_key)
-    // const currentUser = await TokenStore.findOne({userId: req.userId})
-    // if(!currentUser) {
-    //     return res.status(404).json({message: "Token not found"})
-    // }
-    // let accessToken = currentUser.accessToken
-    // console.log(accessToken)
+    const currentUser = await TokenStore.findOne({ userId: req.userId })
+    if (!currentUser) {
+        return res.status(404).json({ message: "Token not found" })
+    }
+    let accessToken = currentUser.accessToken
+    console.log(accessToken)
     console.log("Final URL:", `https://api.upstox.com/v3/historical-candle/${instrument_key}/${unit}/${interval}/${toDate}/${fromDate}`)
 
 
@@ -115,7 +115,7 @@ const loadOHLCData = async (req, res) => {
         const response = await axios.get(`https://api.upstox.com/v3/historical-candle/${instrument_key}/${unit}/${interval}/${toDate}/${fromDate}`,
             {
                 headers: {
-                    Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+                    Authorization: `Bearer ${accessToken}`,
                     Accept: "application/json",
                 }
             })
@@ -130,15 +130,22 @@ const loadOHLCData = async (req, res) => {
 const loadIntradayData = async (req, res) => {
     const { instrument_key, interval, unit } = req.params
 
+    const currentUser = await TokenStore.findOne({ userId: req.userId })
+    if (!currentUser) {
+        return res.status(404).json({ message: "Token not found" })
+    }
+    let accessToken = currentUser.accessToken
+    console.log(accessToken)
+
     try {
         const response = await axios.get(`https://api.upstox.com/v3/historical-candle/intraday/${instrument_key}/${unit}/${interval}`,
             {
                 headers: {
-                    Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+                    Authorization: `Bearer ${accessToken}`,
                     Accept: "application/json",
                 },
             })
-
+        
         res.status(200).json({ data: response.data?.data?.candles || {} })
     } catch (error) {
         console.error(error);
@@ -209,14 +216,29 @@ const getStockList = async (req, res) => {
             !/(\d{4}|\d+\.\d+%|PVT|SDL)/i.test(item.name || item.trading_symbol)
         )
 
-        const instrumentList = filtered.map((data) => {
-            return {
-                label: data.name || data.trading_symbol,
-                instrument_key: data.instrument_key
-            }
-        }).filter(entry => !!entry.label)
+        const instrumentMap = {}
 
-        res.json(instrumentList.splice(100, 10))
+        for(const instrument of filtered) {
+            const symbol = instrument.trading_symbol
+            const exchange = instrument.instrument_key.includes("NSE")? "NSE": "BSE"
+            const name = instrument.name
+            
+            //if entry is not present then we have to creat new entry
+            if(!instrumentMap[symbol]){
+                instrumentMap[symbol] = {
+                    symbol,
+                    name,
+                    instrumentKeys: {}
+                }
+            }
+
+            instrumentMap[symbol].instrumentKeys[exchange] = instrument.instrument_key
+        }
+
+        const instrumentList = Object.values(instrumentMap)
+
+        // res.json(instrumentList.splice(100, 10))
+        res.json(instrumentList.filter(item=>item.symbol === "TCS"))
     } catch (error) {
         console.error(error);
         res.json("Failed to fetch market quote:", error);
