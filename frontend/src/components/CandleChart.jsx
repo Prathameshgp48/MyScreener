@@ -42,6 +42,17 @@ const CandleChart = ({ data, range = "1D" }) => {
     },
     xaxis: {
       type: "datetime",
+      labels: {
+        datetimeFormatter: {
+          year: "yyyy",
+          month: "MMM yyyy",
+          day: "dd MMM",
+          hour: "HH:mm",
+        },
+      },
+      tooltip: {
+        enabled: true,
+      },
     },
     yaxis: {
       tooltip: {
