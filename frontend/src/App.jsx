@@ -1,21 +1,20 @@
-import { useEffect, useState } from "react";
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import StockDetails from "./pages/StockDetails";
 import Login from "./pages/Login";
+import "./App.css";
+import TradingViewWidget from "./pages/TradingViewWidget";
 import AuthCallback from "./pages/AuthCallback";
-import { Route, Routes } from "react-router-dom";
 
 function App() {
   return (
-    <div>
+    <BrowserRouter>
       <Routes>
+        <Route path="/" element={<StockDetails />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/stock-details" element={<StockDetails />} />
+        <Route path="/chart" element={<TradingViewWidget />} />
         <Route path="/auth/callback" element={<AuthCallback/>} />
       </Routes>
-      {/* <StockDetails />
-      <Login /> */}
-    </div>
+    </BrowserRouter>
   );
 }
 
