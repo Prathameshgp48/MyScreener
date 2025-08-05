@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import CandleChart from "../components/CandleChart";
+import TradingViewChart from "../components/TradingViewChart";
 
 function StockDetails() {
   const [interval, setInterval] = useState(15);
@@ -79,19 +80,31 @@ function StockDetails() {
     setFromDate(newFrom);
 
     try {
-      const instrument_key = "NSE_EQ|INE002A01018";
+      const instrument_key = "NSE_EQ|INE467B01029";
       let response;
-      if (range === "1D" && (day === 0 || day === 6)) {
+      const jwtToken = sessionStorage.getItem("jwt")
+      if(!jwtToken) return
+      // console.log(jwtToken)
+      if (range === "1D" && !(day === 0 || day === 6)) {
         response = await axios.get(
           `http://localhost:5000/api/v1/intraday/${instrument_key}/${computedUnit}/${computedInterval}`
-        );
+        ,{
+          headers: {
+            Authorization: `Bearer ${jwtToken}`
+          }
+        });
       } else {
         response = await axios.get(
-          `http://localhost:5000/api/v1/candle-data/${instrument_key}/${computedUnit}/${computedInterval}/${to}/${newFrom}`
+          `http://localhost:5000/api/v1/candle-data/${instrument_key}/${computedUnit}/${computedInterval}/${to}/${newFrom}`,
+          {
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          }
         );
       }
-      setCandles(response.data);
-      // console.log(candles)
+      setCandles(response.data?.data);
+      console.log(candles)
     } catch (error) {
       console.log("Fetching error", error);
     }
@@ -99,20 +112,20 @@ function StockDetails() {
 
   useEffect(() => {
     setGranularity(filter);
-    const socket = io("http://localhost:5000", {
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    // const socket = io("http://localhost:5000", {
+    //   reconnection: true,
+    //   reconnectionAttempts: 5,
+    //   reconnectionDelay: 1000,
+    // });
 
-    socket.on("liveData", (feed) => {
-      if (feed?.feeds || Object?.keys(feed.feeds).length === 0) return;
-      const instrumentKey = Object?.keys(feed.feeds)[0];
-      const ltpData = feed.feeds[instrumentKey]?.fullFeed?.indexFF?.marketOHLC;
-      console.log(ltpData);
-    });
+    // socket.on("liveData", (feed) => {
+    //   if (feed?.feeds || Object?.keys(feed.feeds).length === 0) return;
+    //   const instrumentKey = Object?.keys(feed.feeds)[0];
+    //   const ltpData = feed.feeds[instrumentKey]?.fullFeed?.indexFF?.marketOHLC;
+    //   console.log(ltpData);
+    // });
 
-    return () => socket.disconnect();
+    // return () => socket.disconnect();
   }, [filter]);
 
   return (
@@ -137,7 +150,8 @@ function StockDetails() {
             </button>
           );
         })}
-        <CandleChart data={candles} range={filter} />
+        {/* <CandleChart data={candles} range={filter} /> */}
+        <TradingViewChart data={candles} />
       </div>
     </div>
   );
