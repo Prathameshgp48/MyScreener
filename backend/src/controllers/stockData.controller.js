@@ -127,31 +127,65 @@ const loadOHLCData = async (req, res) => {
     }
 }
 
-const loadIntradayData = async (req, res) => {
-    const { instrument_key, interval, unit } = req.params
+// const loadIntradayData = async (req, res) => {
+//     const { instrument_key, interval, unit } = req.params
 
-    const currentUser = await TokenStore.findOne({ userId: req.userId })
-    if (!currentUser) {
-        return res.status(404).json({ message: "Token not found" })
-    }
-    let accessToken = currentUser.accessToken
-    console.log(accessToken)
+//     try {
+//         const response = await axios.get(`https://api.upstox.com/v3/historical-candle/intraday/${instrument_key}/${unit}/${interval}`,
+//             {
+//                 headers: {
+//                     Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+//                     Accept: "application/json",
+//                 },
+//             })
+
+//         res.status(200).json({ data: response.data?.data?.candles || {} })
+//     } catch (error) {
+//         console.error(error);
+//         res.json("Failed to fetch intraday data:", error);
+//     }
+// }
+
+const loadIntradayData = async (req, res) => {
+    const { interval, unit } = req.params;
+    const instrument_key = encodeURIComponent(req.params.instrument_key);
 
     try {
-        const response = await axios.get(`https://api.upstox.com/v3/historical-candle/intraday/${instrument_key}/${unit}/${interval}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    Accept: "application/json",
-                },
-            })
+        // 🔐 Get the user's access token from the database
+        const currentUser = await TokenStore.findOne({ userId: req.userId });
+        if (!currentUser) {
+            return res.status(404).json({ message: "Access token not found for user" });
+        }
+
+        const accessToken = currentUser.accessToken;
+
+        // 🔗 Construct the full API URL
+        const url = `https://api.upstox.com/v3/historical-candle/intraday/${instrument_key}/${unit}/${interval}`;
+        console.log("Requesting URL:", url);
+
+        // 📡 Make the request to Upstox API
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/json",
+            },
+        });
+        console.log("Response data:", response.data);
         
-        res.status(200).json({ data: response.data?.data?.candles || {} })
+        // 📦 Send response back
+        res.status(200).json({ data: response.data?.data?.candles || [] });
+
     } catch (error) {
-        console.error(error);
-        res.json("Failed to fetch intraday data:", error);
+        const errorData = error.response?.data || { message: error.message };
+        console.error("loadIntradayData error:", errorData);
+
+        res.status(400).json({
+            message: "Failed to fetch intraday data",
+            error: errorData,
+        });
     }
-}
+};
+
 
 const getMarketQuote = async (req, res) => {
     const instrumentKey = 'NSE_EQ|INE848E01016'
