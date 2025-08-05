@@ -9,7 +9,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<StockDetails />} />
+        <Route path="/stock-details" element={<StockDetails />} />
         <Route path="/login" element={<Login />} />
         <Route path="/chart" element={<TradingViewWidget />} />
         <Route path="/auth/callback" element={<AuthCallback/>} />
